@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="透明寶特瓶紅黃閃亮膠帶 3D 互動教學模型" />
+  <title>寶特瓶閃亮膠帶｜3D 教學模型</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#232a38;background:#f7f7f3}
+    *{box-sizing:border-box}body{margin:0}main{min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:0}
+    #stage{min-height:100dvh;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 40%,#fff 0%,#f7fafb 55%,#e8eff2 100%);touch-action:none;cursor:grab}
+    #stage:active{cursor:grabbing}canvas{display:block;width:100%;height:100%}
+    .hint{position:absolute;bottom:25px;left:50%;transform:translateX(-50%);background:#ffffffdf;border:1px solid #dce4e8;border-radius:50px;padding:10px 17px;font-size:13px;white-space:nowrap;pointer-events:none;box-shadow:0 6px 25px #1232}
+    aside{padding:40px 28px;background:white;border-left:1px solid #e4e7e8;display:flex;flex-direction:column}
+    .eyebrow{font-size:12px;letter-spacing:.18em;font-weight:800;color:#617b88}h1{font-size:26px;line-height:1.35;margin:15px 0 12px}p{line-height:1.8;color:#5d6875;font-size:14px;margin:0 0 20px}
+    .section{font-size:13px;color:#687580;margin:22px 0 9px;font-weight:750}.stats{display:flex;gap:8px;margin:6px 0 10px}.stat{flex:1;border:1px solid #edf0f1;border-radius:13px;padding:14px 8px;text-align:center}.stat strong{display:block;font-size:27px}.stat span{font-size:12px;color:#6e7784}
+    button{font:inherit;cursor:pointer}.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.controls button{border:1px solid #dfe4e8;border-radius:12px;background:#fff;padding:12px 7px;color:#4d5968;font-size:13px}.controls button.active{background:#253a4e;color:white;border-color:#253a4e}
+    #reset{width:100%;margin-top:12px;padding:13px;border-radius:12px;background:#edf3f6;border:0;color:#263d4b;font-weight:750}
+    .drawing-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.drawing-controls button{border:1px solid #dfe4e8;border-radius:12px;background:white;padding:14px 5px;color:#4d5968;font-weight:750}.drawing-controls button.active{background:#182c3f;color:white;border-color:#182c3f}
+    .legend{display:flex;gap:16px;margin-top:14px;font-size:13px}.dot{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:5px}.red{background:#db3033}.yellow{background:#efbc12}
+    .footer{margin-top:auto;padding-top:30px;color:#91a0ac;font-size:12px;line-height:1.8}
+    @media(max-width:750px){main{display:flex;flex-direction:column}#stage{min-height:63dvh;height:63dvh}aside{padding:23px 22px 30px}h1{font-size:22px}.hint{font-size:11px;bottom:14px}.footer{padding-top:13px}}
+  </style>
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+</head>
+<body>
+<main>
+  <div id="stage" aria-label="可用滑鼠拖曳旋轉的立體寶特瓶模型"><div class="hint">↔ 拖曳旋轉　·　滾輪縮放　·　手機可用手指操作</div></div>
+  <aside>
+    <div class="eyebrow">CLASSROOM · 3D MODEL</div>
+    <h1>寶特瓶閃亮膠帶<br>立體教學模型</h1>
+    <p>旋轉透明瓶身，從各個角度觀察膠帶位置。紅、黃兩色間隔黏貼，瓶身保留透明空隙。</p>
+    <div class="stats"><div class="stat"><strong>4</strong><span>水平環繞</span></div><div class="stat"><strong>4</strong><span>垂直排列</span></div><div class="stat"><strong>8</strong><span>總膠帶數</span></div></div>
+    <div class="legend"><span><i class="dot red"></i>紅色 × 4</span><span><i class="dot yellow"></i>黃色 × 4</span></div>
+    <div class="section">瓶身繪圖效果比較</div>
+    <div class="drawing-controls"><button class="active" data-drawing="off">未繪製</button><button data-drawing="on">已繪製 ✎</button></div>
+    <div class="section">選擇展示內容</div>
+    <div class="controls"><button class="active" data-view="all">全部顯示</button><button data-view="horizontal">只看水平</button><button data-view="vertical">只看垂直</button><button data-view="bottle">只看瓶身</button></div>
+    <button id="reset">↺ 回到正面視角</button>
+    <div class="footer">教學提示：上方 4 條直向膠帶分布在瓶身四周，旋轉瓶子才能完整看見。</div>
+  </aside>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const stage=document.querySelector('#stage');
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(36,1,.1,100);camera.position.set(7,4.1,13);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(stage.clientWidth,stage.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.55;stage.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0xa2bdc9,2.5));
+const key=new THREE.DirectionalLight(0xffffff,3.3);key.position.set(4,8,7);scene.add(key);
+const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(-5,3,-5);scene.add(fill);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,3.25,0);controls.enableDamping=true;controls.dampingFactor=.06;controls.minDistance=7;controls.maxDistance=24;controls.enablePan=false;controls.minPolarAngle=.15;controls.maxPolarAngle=Math.PI-.15;
+const model=new THREE.Group();scene.add(model);
+const profile=[[0,.2],[.57,.2],[.73,.23],[.85,.33],[.92,.56],[.95,.85],[.95,1.3],[.95,2],[.94,3.2],[.94,4.4],[.87,4.8],[.76,5.1],[.63,5.42],[.5,5.68],[.39,5.94],[.37,6.12],[.37,6.52],[.4,6.58]];
+const radius=y=>{for(let i=1;i<profile.length;i++){if(y<=profile[i][1]){const [r0,y0]=profile[i-1],[r1,y1]=profile[i];const t=(y-y0)/(y1-y0);return r0+(r1-r0)*t;}}return .4};
+const glass=new THREE.Mesh(new THREE.LatheGeometry(profile.map(p=>new THREE.Vector2(p[0],p[1])),96),new THREE.MeshPhysicalMaterial({color:0xe8f5ff,roughness:.12,metalness:0,transmission:.94,transparent:true,opacity:.32,thickness:.18,ior:1.46,side:THREE.DoubleSide,depthWrite:false}));glass.renderOrder=1;model.add(glass);
+const base=new THREE.Mesh(new THREE.CylinderGeometry(.46,.52,.13,64),new THREE.MeshPhysicalMaterial({color:0xd9e6eb,transparent:true,opacity:.27,roughness:.25}));base.position.y=.23;model.add(base);
+const cap=new THREE.Group();const capMat=new THREE.MeshStandardMaterial({color:0xf4f7f7,roughness:.48});const capBody=new THREE.Mesh(new THREE.CylinderGeometry(.44,.44,.35,64),capMat);capBody.position.y=6.76;cap.add(capBody);for(let i=0;i<48;i++){const a=2*Math.PI*i/48;const rib=new THREE.Mesh(new THREE.BoxGeometry(.016,.25,.024),capMat);rib.position.set(.443*Math.sin(a),6.76,.443*Math.cos(a));rib.rotation.y=a;cap.add(rib)}model.add(cap);
+// Smooth, glossy reflective adhesive tape: uninterrupted saturated colour, no grain or flakes.
+const redMat=new THREE.MeshPhysicalMaterial({color:0xee111a,metalness:.16,roughness:.09,clearcoat:1,clearcoatRoughness:.035,side:THREE.DoubleSide});
+const yellowMat=new THREE.MeshPhysicalMaterial({color:0xffd400,metalness:.16,roughness:.09,clearcoat:1,clearcoatRoughness:.035,side:THREE.DoubleSide});
+const horizontal=new THREE.Group(),vertical=new THREE.Group();model.add(horizontal,vertical);
+function band(y,height,material){const shape=[];for(let j=0;j<=12;j++){const yy=y-height/2+height*j/12;shape.push(new THREE.Vector2(radius(yy)+.018,yy))}const mesh=new THREE.Mesh(new THREE.LatheGeometry(shape,96),material);mesh.renderOrder=3;horizontal.add(mesh)}
+band(.82,.36,redMat);band(1.92,.32,yellowMat);band(3.05,.34,redMat);band(4.18,.32,yellowMat);
+function stripe(angle,material){const vertices=[],indices=[];const segments=28,width=.19;for(let j=0;j<=segments;j++){const y=5.04+j/segments*1.03;for(let s of [-1,1]){const a=angle+s*width/(2*radius(y));const r=radius(y)+.024;vertices.push(r*Math.sin(a),y,r*Math.cos(a));}}for(let j=0;j<segments;j++){const k=j*2;indices.push(k,k+1,k+2,k+1,k+3,k+2)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();const m=new THREE.Mesh(g,material);m.renderOrder=4;vertical.add(m)}
+stripe(0,redMat);stripe(Math.PI/2,yellowMat);stripe(Math.PI,redMat);stripe(3*Math.PI/2,yellowMat);
+// Black marker doodles drawn directly onto the transparent curved bottle surface.
+// Every stroke follows the bottle curvature; tape remains glossy and unobstructed.
+const doodles=new THREE.Group();model.add(doodles);doodles.visible=false;
+const ink=new THREE.MeshBasicMaterial({color:0x15191c,depthWrite:false});
+function pathOnBottle(angle,y,coords,scale=.22){const pts=coords.map(([x,dy])=>{const yy=y+dy*scale;const theta=angle+x*scale/radius(yy);const rr=radius(yy)+.045;return new THREE.Vector3(rr*Math.sin(theta),yy,rr*Math.cos(theta))});if(pts.length<2)return;const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(24,pts.length*3),.009,5,false),ink);mesh.renderOrder=2;doodles.add(mesh)}
+function heart(a,y,s){const p=[];for(let i=0;i<=64;i++){const t=i/64*Math.PI*2;const x=16*Math.pow(Math.sin(t),3)/18;const z=(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))/18;p.push([x,z])}pathOnBottle(a,y,p,s)}
+function smile(a,y,s){const circle=[];for(let i=0;i<=48;i++){const t=2*Math.PI*i/48;circle.push([.95*Math.cos(t),.95*Math.sin(t)])}pathOnBottle(a,y,circle,s);for(const x of [-.36,.36]){const eye=[];for(let i=0;i<=16;i++){const t=2*Math.PI*i/16;eye.push([x+.075*Math.cos(t),.25+.075*Math.sin(t)])}pathOnBottle(a,y,eye,s)}const mouth=[];for(let i=0;i<=24;i++){const x=-.54+1.08*i/24;mouth.push([x,-.12-.34*(1-(x/.54)**2)])}pathOnBottle(a,y,mouth,s)}
+function note(a,y,s){pathOnBottle(a,y,[[.24,.73],[.24,-.47]],s);pathOnBottle(a,y,[[.24,.73],[.82,.48],[.82,.24]],s);const oval=[];for(let i=0;i<=28;i++){const t=2*Math.PI*i/28;oval.push([-.04+.36*Math.cos(t),-.60+.22*Math.sin(t)])}pathOnBottle(a,y,oval,s)}
+function clover(a,y,s){for(const [cx,cy] of [[-.42,.35],[.42,.35],[-.42,-.32],[.42,-.32]]){const leaf=[];for(let i=0;i<=28;i++){const t=2*Math.PI*i/28;leaf.push([cx+.38*Math.cos(t),cy+.38*Math.sin(t)])}pathOnBottle(a,y,leaf,s)}pathOnBottle(a,y,[[0,-.4],[.09,-.85],[.26,-1.08]],s)}
+const shapes=[heart,clover,note,smile];
+const rows=[{y:1.43,n:9},{y:2.49,n:9},{y:3.64,n:9},{y:4.67,n:7}];
+rows.forEach((row,j)=>{for(let i=0;i<row.n;i++){const a=(i+(j%2)*.5)*2*Math.PI/row.n;shapes[(i+j)%4](a,row.y,.18+(i%3)*.012)}});
+const ground=new THREE.Mesh(new THREE.CircleGeometry(1.65,64),new THREE.MeshBasicMaterial({color:0x859aa8,transparent:true,opacity:.12,depthWrite:false}));ground.rotation.x=-Math.PI/2;ground.position.y=.07;scene.add(ground);
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}new ResizeObserver(resize).observe(stage);resize();
+function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');const v=b.dataset.view;horizontal.visible=v==='all'||v==='horizontal';vertical.visible=v==='all'||v==='vertical'}));
+document.querySelectorAll('[data-drawing]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-drawing]').forEach(x=>x.classList.remove('active'));b.classList.add('active');doodles.visible=b.dataset.drawing==='on'}));
+document.querySelector('#reset').addEventListener('click',()=>{camera.position.set(7,4.1,13);controls.target.set(0,3.25,0);controls.update()});
+</script>
+</body></html>
