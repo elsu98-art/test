@@ -17,6 +17,7 @@
     button{font:inherit;cursor:pointer}.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.controls button{border:1px solid #dfe4e8;border-radius:12px;background:#fff;padding:12px 7px;color:#4d5968;font-size:13px}.controls button.active{background:#253a4e;color:white;border-color:#253a4e}
     #reset{width:100%;margin-top:12px;padding:13px;border-radius:12px;background:#edf3f6;border:0;color:#263d4b;font-weight:750}
     .drawing-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.drawing-controls button{border:1px solid #dfe4e8;border-radius:12px;background:white;padding:14px 5px;color:#4d5968;font-weight:750}.drawing-controls button.active{background:#182c3f;color:white;border-color:#182c3f}
+    #stage.dark{background:radial-gradient(circle at 50% 42%,#343d4c 0%,#101722 70%,#05080f 100%)}#stage.dark .hint{background:#243040e8;color:white;border-color:#4e5d6c}
     .legend{display:flex;gap:16px;margin-top:14px;font-size:13px}.dot{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:5px}.red{background:#db3033}.yellow{background:#efbc12}
     .footer{margin-top:auto;padding-top:30px;color:#91a0ac;font-size:12px;line-height:1.8}
     @media(max-width:750px){main{display:flex;flex-direction:column}#stage{min-height:63dvh;height:63dvh}aside{padding:23px 22px 30px}h1{font-size:22px}.hint{font-size:11px;bottom:14px}.footer{padding-top:13px}}
@@ -34,6 +35,8 @@
     <div class="legend"><span><i class="dot red"></i>紅色 × 4</span><span><i class="dot yellow"></i>黃色 × 4</span></div>
     <div class="section">瓶身繪圖效果比較</div>
     <div class="drawing-controls"><button class="active" data-drawing="off">未繪製</button><button data-drawing="on">已繪製 ✎</button></div>
+    <div class="section">展示背景</div>
+    <div class="drawing-controls"><button class="active" data-bg="white">白色背景</button><button data-bg="black">黑色背景</button></div>
     <div class="section">選擇展示內容</div>
     <div class="controls"><button class="active" data-view="all">全部顯示</button><button data-view="horizontal">只看水平</button><button data-view="vertical">只看垂直</button><button data-view="bottle">只看瓶身</button></div>
     <button id="reset">↺ 回到正面視角</button>
@@ -74,14 +77,25 @@ function heart(a,y,s){const p=[];for(let i=0;i<=64;i++){const t=i/64*Math.PI*2;c
 function smile(a,y,s){const circle=[];for(let i=0;i<=48;i++){const t=2*Math.PI*i/48;circle.push([.95*Math.cos(t),.95*Math.sin(t)])}pathOnBottle(a,y,circle,s);for(const x of [-.36,.36]){const eye=[];for(let i=0;i<=16;i++){const t=2*Math.PI*i/16;eye.push([x+.075*Math.cos(t),.25+.075*Math.sin(t)])}pathOnBottle(a,y,eye,s)}const mouth=[];for(let i=0;i<=24;i++){const x=-.54+1.08*i/24;mouth.push([x,-.12-.34*(1-(x/.54)**2)])}pathOnBottle(a,y,mouth,s)}
 function note(a,y,s){pathOnBottle(a,y,[[.24,.73],[.24,-.47]],s);pathOnBottle(a,y,[[.24,.73],[.82,.48],[.82,.24]],s);const oval=[];for(let i=0;i<=28;i++){const t=2*Math.PI*i/28;oval.push([-.04+.36*Math.cos(t),-.60+.22*Math.sin(t)])}pathOnBottle(a,y,oval,s)}
 function clover(a,y,s){for(const [cx,cy] of [[-.42,.35],[.42,.35],[-.42,-.32],[.42,-.32]]){const leaf=[];for(let i=0;i<=28;i++){const t=2*Math.PI*i/28;leaf.push([cx+.38*Math.cos(t),cy+.38*Math.sin(t)])}pathOnBottle(a,y,leaf,s)}pathOnBottle(a,y,[[0,-.4],[.09,-.85],[.26,-1.08]],s)}
-const shapes=[heart,clover,note,smile];
-const rows=[{y:1.43,n:9},{y:2.49,n:9},{y:3.64,n:9},{y:4.67,n:7}];
-rows.forEach((row,j)=>{for(let i=0;i<row.n;i++){const a=(i+(j%2)*.5)*2*Math.PI/row.n;shapes[(i+j)%4](a,row.y,.18+(i%3)*.012)}});
+function flower(a,y,s){for(let k=0;k<5;k++){const t0=k*2*Math.PI/5;const petal=[];for(let i=0;i<=18;i++){const t=i/18*Math.PI*2;petal.push([.65*Math.cos(t0)+.34*Math.cos(t),.65*Math.sin(t0)+.34*Math.sin(t)])}pathOnBottle(a,y,petal,s)}const core=[];for(let i=0;i<=24;i++){const t=i/24*Math.PI*2;core.push([.22*Math.cos(t),.22*Math.sin(t)])}pathOnBottle(a,y,core,s)}
+function sun(a,y,s){const circ=[];for(let i=0;i<=36;i++){const t=i/36*Math.PI*2;circ.push([.48*Math.cos(t),.48*Math.sin(t)])}pathOnBottle(a,y,circ,s);for(let k=0;k<8;k++){const t=k*Math.PI/4;pathOnBottle(a,y,[[.68*Math.cos(t),.68*Math.sin(t)],[1.04*Math.cos(t),1.04*Math.sin(t)]],s)}}
+const shapes=[flower,heart,smile,sun,note,clover];
+// Small, irregular hand-drawn placement: no rows, with varied heights and spacing.
+let seed=81251;function random(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
+const clearGaps=[[1.25,1.70],[2.19,2.78],[3.30,3.84],[4.47,4.82]];
+for(let i=0;i<58;i++){
+  const zone=clearGaps[i%clearGaps.length];
+  const angle=(i*.61803398875%1)*Math.PI*2+(random()-.5)*.23;
+  const y=zone[0]+.10+random()*(zone[1]-zone[0]-.20);
+  const size=.085+random()*.033;
+  shapes[(i+Math.floor(random()*6))%6](angle,y,size);
+}
 const ground=new THREE.Mesh(new THREE.CircleGeometry(1.65,64),new THREE.MeshBasicMaterial({color:0x859aa8,transparent:true,opacity:.12,depthWrite:false}));ground.rotation.x=-Math.PI/2;ground.position.y=.07;scene.add(ground);
 function resize(){const w=stage.clientWidth,h=stage.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}new ResizeObserver(resize).observe(stage);resize();
 function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');const v=b.dataset.view;horizontal.visible=v==='all'||v==='horizontal';vertical.visible=v==='all'||v==='vertical'}));
 document.querySelectorAll('[data-drawing]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-drawing]').forEach(x=>x.classList.remove('active'));b.classList.add('active');doodles.visible=b.dataset.drawing==='on'}));
+document.querySelectorAll('[data-bg]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-bg]').forEach(x=>x.classList.remove('active'));b.classList.add('active');stage.classList.toggle('dark',b.dataset.bg==='black')}));
 document.querySelector('#reset').addEventListener('click',()=>{camera.position.set(7,4.1,13);controls.target.set(0,3.25,0);controls.update()});
 </script>
 </body></html>
